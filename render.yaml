@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: lane-rush
+    env: node
+    plan: starter # Starter plan recommended to prevent idle sleeping on free tier during multiplayer
+    buildCommand: ""
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000

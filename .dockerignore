@@ -1,0 +1,7 @@
+node_modules
+.git
+.env*
+*.log
+test-*.js
+check-client.js
+TEST_REPORT.md

@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#070b18">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>">
+<title>Lane Rush — Arcade Driver</title>
+<style>
+  :root{color-scheme:dark;--ink:#f4f7ff;--muted:#99a8c7;--cyan:#64efff;--pink:#ff5eaa;--panel:rgba(12,19,42,.78)}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070b18;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:manipulation}
+  body{display:grid;place-items:center;background:radial-gradient(ellipse at 50% 20%,#17234a 0%,#080d1d 48%,#04060e 100%)}
+  .game-shell{position:relative;width:min(100vw, calc(100vh * 1.5));aspect-ratio:3/2;max-height:100vh;border:1px solid rgba(125,226,255,.2);border-radius:18px;overflow:hidden;background:#08111f;box-shadow:0 25px 90px rgba(0,0,0,.55),0 0 50px rgba(35,190,255,.08);isolation:isolate}
+  canvas{display:block;width:100%;height:100%;outline:none}
+  .topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:clamp(10px,2vw,22px);pointer-events:none;gap:10px}
+  .brand{font-weight:950;letter-spacing:.12em;line-height:1;font-size:clamp(12px,1.7vw,18px);text-shadow:0 0 20px rgba(100,239,255,.25)}
+  .brand span{color:var(--cyan)}
+  .tagline{font-size:clamp(8px,1vw,11px);letter-spacing:.18em;color:#91a2c6;margin-top:5px;text-transform:uppercase}
+  .conn-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:20px;font-size:clamp(8px,1vw,10px);font-weight:800;letter-spacing:.08em;text-transform:uppercase;border:1px solid transparent;backdrop-filter:blur(6px);pointer-events:auto;margin-top:6px}
+  .conn-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .conn-connecting{background:rgba(255,180,50,.18);border-color:rgba(255,180,50,.4);color:#ffd166}
+  .conn-connecting .conn-dot{background:#ffd166;animation:pulse 1s infinite alternate}
+  .conn-connected{background:rgba(67,226,193,.18);border-color:rgba(67,226,193,.4);color:#43e2c1}
+  .conn-connected .conn-dot{background:#43e2c1;box-shadow:0 0 6px #43e2c1}
+  .conn-reconnecting{background:rgba(255,100,100,.18);border-color:rgba(255,100,100,.4);color:#ff9e9e}
+  .conn-reconnecting .conn-dot{background:#ff5e87;animation:pulse .6s infinite alternate}
+  .conn-lost{background:rgba(230,50,50,.24);border-color:rgba(230,50,50,.45);color:#ff7a7a}
+  .conn-lost .conn-dot{background:#ff4d4d}
+  .conn-finished{background:rgba(167,139,250,.2);border-color:rgba(167,139,250,.4);color:#c4b5fd}
+  .conn-finished .conn-dot{background:#a78bfa}
+  @keyframes pulse{from{opacity:.35;transform:scale(.85)}to{opacity:1;transform:scale(1.2)}}
+  .stats{display:flex;gap:clamp(6px,1vw,12px)}
+  .stat{min-width:clamp(54px,8vw,86px);padding:8px 11px;border:1px solid rgba(155,204,255,.17);border-radius:12px;background:rgba(5,12,27,.56);backdrop-filter:blur(8px);text-align:right}
+  .stat-label{display:block;color:#8292b6;font-size:clamp(8px,.9vw,10px);letter-spacing:.14em;text-transform:uppercase}
+  .stat-value{font-variant-numeric:tabular-nums;font-weight:850;font-size:clamp(15px,2vw,23px);line-height:1.25}
+  .stat-value.cyan{color:var(--cyan)}
+  .icon-button{position:absolute;right:clamp(10px,2vw,22px);top:85px;width:38px;height:38px;border:1px solid rgba(155,204,255,.2);border-radius:11px;color:#dce8ff;background:rgba(5,12,27,.65);cursor:pointer;font-size:17px;pointer-events:auto}
+  .icon-button:hover{border-color:rgba(100,239,255,.7);background:rgba(26,44,74,.8)}
+  .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(90deg,rgba(4,8,20,.58),rgba(4,8,20,.24),rgba(4,8,20,.58));backdrop-filter:blur(3px)}
+  .overlay[hidden]{display:none}
+  .dialog{width:min(420px,95%);text-align:center;padding:clamp(20px,4vw,36px);border-radius:24px;border:1px solid rgba(118,220,255,.23);background:linear-gradient(145deg,rgba(15,25,54,.94),rgba(7,12,28,.95));box-shadow:0 25px 80px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.04)}
+  .eyebrow{font-size:10px;letter-spacing:.24em;color:var(--cyan);font-weight:800;text-transform:uppercase}
+  h1{margin:9px 0 8px;line-height:.95;font-size:clamp(32px,5.5vw,52px);letter-spacing:-.055em}
+  h1 em{color:var(--cyan);font-style:normal;text-shadow:0 0 28px rgba(100,239,255,.22)}
+  .description{max-width:315px;margin:0 auto 22px;color:#a9b7d5;font-size:13px;line-height:1.65}
+  .primary{width:100%;border:0;border-radius:12px;padding:14px 18px;background:linear-gradient(105deg,#65f0ff,#66b9ff);color:#061222;font:900 13px/1 inherit;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 25px rgba(69,204,255,.2);transition:transform .15s,filter .15s}
+  .primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .primary:active{transform:translateY(1px)}
+  .secondary{margin-top:10px;width:100%;border:1px solid rgba(158,195,255,.18);border-radius:12px;padding:12px;background:rgba(255,255,255,.03);color:#c5d1ea;font-weight:750;cursor:pointer}
+  .online-row{display:flex;gap:8px;margin-top:10px}.online-row input{min-width:0;flex:1;padding:12px;border-radius:10px;border:1px solid rgba(158,195,255,.22);background:#081226;color:#f4f7ff;text-transform:uppercase;letter-spacing:.12em}.online-status{font-size:11px;color:var(--cyan);margin-top:12px;min-height:16px;line-height:1.4}.controls-note{font-size:10px;color:#7082aa;letter-spacing:.12em;text-transform:uppercase;margin-top:17px}
+  .online-live{position:absolute;left:clamp(10px,2vw,22px);top:82px;max-width:min(440px,70%);padding:8px 12px;border:1px solid rgba(100,239,255,.22);border-radius:10px;background:rgba(5,12,27,.72);color:#9fefff;font-size:10px;letter-spacing:.06em;line-height:1.4;pointer-events:none;backdrop-filter:blur(8px)}
+  .online-live[hidden]{display:none}
+  .results{display:flex;justify-content:center;gap:25px;margin:15px 0 22px}
+  .result-label{font-size:9px;color:#7f91b6;letter-spacing:.16em;text-transform:uppercase}
+  .result-number{font-size:24px;font-weight:900;font-variant-numeric:tabular-nums;margin-top:3px}
+  .result-number.best{color:var(--cyan)}
+  .touch-controls{position:absolute;left:0;right:0;bottom:clamp(12px,2vw,22px);display:flex;justify-content:space-between;padding:0 clamp(14px,3vw,30px);pointer-events:none}
+  .touch-btn{pointer-events:auto;width:clamp(52px,8vw,66px);height:clamp(52px,8vw,66px);border-radius:19px;border:1px solid rgba(169,218,255,.25);background:rgba(7,15,34,.58);color:white;font-size:25px;box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(8px);cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+  .touch-btn:active{background:rgba(40,111,144,.65);border-color:var(--cyan)}
+  .hint{position:absolute;bottom:clamp(18px,3vw,32px);left:50%;transform:translateX(-50%);white-space:nowrap;color:rgba(193,210,242,.58);font-size:clamp(8px,.95vw,11px);letter-spacing:.13em;text-transform:uppercase;pointer-events:none}
+  .toast{position:absolute;top:24%;left:50%;transform:translate(-50%,-10px);padding:9px 16px;border-radius:100px;background:rgba(10,25,43,.88);border:1px solid rgba(100,239,255,.4);color:var(--cyan);font-size:11px;letter-spacing:.13em;font-weight:900;text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media(max-width:550px){.game-shell{border-radius:0;border:0;width:100vw;max-height:100dvh;aspect-ratio:auto;height:100dvh}.topbar{padding:13px}.tagline{display:none}.stat{padding:6px 8px;min-width:51px}.icon-button{top:72px}.hint{bottom:92px}.touch-controls{bottom:17px}.dialog{padding:24px 20px}}
+  @media(hover:none){.touch-controls{display:flex}}
+  @media(hover:hover) and (min-width:700px){.touch-controls{opacity:.45}.touch-controls:hover{opacity:1}}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="game-shell" id="gameShell">
+  <canvas id="game" width="960" height="640" aria-label="Lane Rush arcade car game"></canvas>
+  <div class="topbar">
+    <div>
+      <div class="brand">LANE<span>RUSH</span></div>
+      <div class="tagline">One more run.</div>
+      <div class="conn-badge conn-connected" id="connBadge" hidden>
+        <span class="conn-dot"></span><span id="connBadgeText">Connected</span>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="stat-label">Score</span><span class="stat-value cyan" id="score">00000</span></div>
+      <div class="stat"><span class="stat-label">Coins</span><span class="stat-value" id="coins">0</span></div>
+      <div class="stat"><span class="stat-label">Best</span><span class="stat-value" id="best">00000</span></div>
+    </div>
+  </div>
+  <button class="icon-button" id="pauseBtn" aria-label="Pause game" title="Pause (P)" hidden>Ⅱ</button>
+  <div class="hint" id="hint">← → or A / D to steer</div>
+  <div class="online-live" id="onlineLive" hidden>ONLINE · Waiting for server…</div>
+  <div class="touch-controls" id="touchControls" hidden>
+    <button class="touch-btn" id="leftBtn" aria-label="Move left">‹</button>
+    <button class="touch-btn" id="rightBtn" aria-label="Move right">›</button>
+  </div>
+  <div class="toast" id="toast">+1 coin</div>
+  <section class="overlay" id="startOverlay">
+    <div class="dialog">
+      <div class="eyebrow">Arcade driving · Endless mode</div>
+      <h1>LANE<br><em>RUSH</em></h1>
+      <p class="description">Dodge traffic at higher speed. Create an online room or join a friend with a room code.</p>
+      <button class="primary" id="startBtn">Start your run&nbsp; ↗</button>
+      <button class="secondary" id="hostBtn">Create online race</button>
+      <div class="online-row"><input id="roomInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code"><button class="secondary" id="joinBtn" style="margin-top:0;width:auto">Join</button></div>
+      <button class="secondary" id="reconnectBtn" hidden>Reconnect to last race</button>
+      <div class="online-status" id="onlineStatus" role="status">Online race runs through the Lane Rush server. Start the server, then create or join a room.</div>
+      <div class="controls-note">Steer with A / D or ← / →</div>
+    </div>
+  </section>
+  <section class="overlay" id="pauseOverlay" hidden>
+    <div class="dialog">
+      <div class="eyebrow">Take a breath</div><h1>GAME<br><em>PAUSED</em></h1>
+      <p class="description">The road will wait. Your run is right where you left it.</p>
+      <button class="primary" id="resumeBtn">Resume drive&nbsp; ▶</button>
+      <button class="secondary" id="pauseRestartBtn">Start over</button>
+      <div class="controls-note">Press P or Escape to resume</div>
+    </div>
+  </section>
+  <section class="overlay" id="gameOverOverlay" hidden>
+    <div class="dialog">
+      <div class="eyebrow">That was a close one</div><h1>RUN<br><em>OVER</em></h1>
+      <p class="description">Every run makes you sharper. Want another shot?</p>
+      <div class="results">
+        <div><div class="result-label">Score</div><div class="result-number" id="finalScore">0</div></div>
+        <div><div class="result-label">Coins</div><div class="result-number" id="finalCoins">0</div></div>
+        <div><div class="result-label">Best run</div><div class="result-number best" id="finalBest">0</div></div>
+      </div>
+      <button class="primary" id="restartBtn">Race again&nbsp; ↻</button>
+      <div class="controls-note">Press Enter to race again</div>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  'use strict';
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const W = 960, H = 640;
+  const ROAD = { left: 270, right: 690, top: 0, bottom: H };
+  const LANES = [340, 480, 620];
+  const CAR_Y = 500;
+  const COLORS = ['#ff5e87', '#ffb34f', '#a78bfa', '#43e2c1', '#c5d3e8'];
+  let state = 'start', lastTime = 0, elapsed = 0, score = 0, coins = 0, best = 0;
+  let roadOffset = 0, spawnTimer = 0, coinTimer = 0, shake = 0, flash = 0;
+  let player, traffic = [], pickups = [], particles = [], stars = [];
+  let lastLane = 1, toastTimer = 0;
+  let socket = null, onlineMode = false, onlineRole = '', roomCode = '', sessionToken = '', remotePlayer = null, serverSnapshot = null, lastServerSnapshotAt = 0;
+  let connectionGeneration = 0, reconnectTimer = null, reconnectDeadline = 0, autoReconnect = true;
+  const BASE_SPEED = 420, SPEED_RAMP = 4.5, MAX_RAMP = 380;
+  try { best = Number(localStorage.getItem('lanerush_best') || 0) || 0; } catch (_) { best = 0; }
+  $('best').textContent = formatScore(best);
+  $('touchControls').hidden = false;
+
+  function setConnectionState(key) {
+    const badge = $('connBadge');
+    const text = $('connBadgeText');
+    if (!badge || !text) return;
+    if (!key) { badge.hidden = true; return; }
+    badge.hidden = false;
+    badge.className = 'conn-badge conn-' + key;
+    const labels = {
+      connecting: 'Connecting',
+      connected: 'Connected',
+      reconnecting: 'Reconnecting',
+      lost: 'Connection Lost',
+      finished: 'Race Finished'
+    };
+    text.textContent = labels[key] || key;
+  }
+
+  function formatScore(n) { return String(Math.floor(n)).padStart(5, '0'); }
+  function resetGame() {
+    score = 0; coins = 0; elapsed = 0; roadOffset = 0; spawnTimer = .65; coinTimer = 1.1; shake = 0; flash = 0;
+    player = { lane: 1, x: LANES[1], targetX: LANES[1], y: CAR_Y, invuln: 0 };
+    traffic = []; pickups = []; particles = []; lastLane = 1;
+    updateHud();
+  }
+  function startGame() {
+    onlineMode = false; serverSnapshot = null; remotePlayer = null; $('onlineLive').hidden = true;
+    setConnectionState(null);
+    resetGame(); state = 'playing';
+    $('startOverlay').hidden = true; $('pauseOverlay').hidden = true; $('gameOverOverlay').hidden = true;
+    $('pauseBtn').hidden = false; $('hint').textContent = '← → or A / D to steer'; lastTime = performance.now();
+  }
+  function pauseGame() {
+    if (state === 'playing') { state = 'paused'; $('pauseOverlay').hidden = false; $('pauseBtn').textContent = '▶'; $('pauseBtn').setAttribute('aria-label','Resume game'); }
+    else if (state === 'paused') resumeGame();
+  }
+  function resumeGame() { state = 'playing'; $('pauseOverlay').hidden = true; $('pauseBtn').textContent = 'Ⅱ'; $('pauseBtn').setAttribute('aria-label','Pause game'); lastTime = performance.now(); }
+  function endGame() {
+    state = 'over'; shake = .35;
+    best = Math.max(best, Math.floor(score));
+    try { localStorage.setItem('lanerush_best', String(best)); } catch (_) {}
+    $('finalScore').textContent = Math.floor(score).toLocaleString();
+    $('finalCoins').textContent = coins;
+    $('finalBest').textContent = best.toLocaleString();
+    $('best').textContent = formatScore(best);
+    $('pauseBtn').hidden = true; $('gameOverOverlay').hidden = false; $('hint').textContent = 'Press Enter to race again';
+    burst(player.x, player.y, '#ff5e87', 22, 260);
+  }
+  function updateHud() { $('score').textContent = formatScore(score); $('coins').textContent = coins; $('best').textContent = formatScore(best); }
+  function steer(direction) {
+    if (state !== 'playing') return;
+    if (onlineMode) {
+      if (socket && socket.readyState === WebSocket.OPEN && player && player.active !== false) {
+        sendSocket({ type: 'input', direction });
+        // Smooth client-side visual prediction for responsive driving
+        const predLane = Math.max(0, Math.min(2, player.lane + direction));
+        if (predLane !== player.lane) {
+          player.lane = predLane;
+          player.targetX = LANES[predLane];
+        }
+      }
+      return;
+    }
+    const next = Math.max(0, Math.min(2, player.lane + direction));
+    if (next !== player.lane) { player.lane = next; player.targetX = LANES[next]; lastLane = next; }
+  }
+  function addTraffic() {
+    let lane = Math.floor(Math.random() * 3);
+    const atTop = traffic.filter(t => t.y < 125);
+    if (atTop.some(t => t.lane === lane)) lane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+    const truck = Math.random() < Math.min(.18, .06 + elapsed * .0008);
+    traffic.push({ lane, x: LANES[lane], y: -100, w: truck ? 72 : 60, h: truck ? 108 : 94, speed: (truck ? 205 : 235) + Math.random()*30, color: COLORS[Math.floor(Math.random()*COLORS.length)], truck, passed:false, wobble:Math.random()*6 });
+  }
+  function addCoins() {
+    let lane = Math.floor(Math.random()*3);
+    if (Math.random()<.6) lane = player.lane;
+    const count = Math.random()<.45 ? 3 : 1;
+    for (let i=0;i<count;i++) pickups.push({ lane, x:LANES[lane], y:-45-i*43, r:13, spin:Math.random()*6, collected:false });
+  }
+  function burst(x,y,color,count=10,speed=150) {
+    for (let i=0;i<count;i++) { const a=Math.random()*Math.PI*2, v=35+Math.random()*speed; particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.35+Math.random()*.55,max:.9,size:2+Math.random()*4,color}); }
+  }
+  function showToast(text) { $('toast').textContent=text; $('toast').classList.add('show'); toastTimer=.8; }
+  function update(dt) {
+    elapsed += dt;
+    const worldSpeed = BASE_SPEED + Math.min(MAX_RAMP, elapsed * SPEED_RAMP);
+    roadOffset = (roadOffset + worldSpeed * dt) % 120;
+    score += dt * (10 + Math.min(25,elapsed*.18));
+    player.x += (player.targetX-player.x)*Math.min(1,dt*13);
+    if (player.invuln > 0) player.invuln -= dt;
+    spawnTimer -= dt;
+    const spawnGap = Math.max(.48, 1.05 - elapsed*.005);
+    if (spawnTimer <= 0) { addTraffic(); spawnTimer = spawnGap * (.78 + Math.random()*.5); }
+    coinTimer -= dt;
+    if (coinTimer <= 0) { addCoins(); coinTimer = 1.6 + Math.random()*1.65; }
+    for (const t of traffic) {
+      t.y += (worldSpeed + t.speed*.23) * dt;
+      if (!t.passed && t.y > CAR_Y+50) { t.passed=true; score += 5; }
+      const dx=Math.abs(player.x-t.x), dy=Math.abs(player.y-t.y);
+      if (!t.hit && dx < (t.w*.5+23) && dy < (t.h*.5+34)) {
+        t.hit=true; shake=.24; flash=.18; burst(player.x,player.y,'#ff5e87',17,230); endGame(); return;
+      }
+    }
+    traffic = traffic.filter(t=>t.y < H+150);
+    for (const c of pickups) {
+      c.y += worldSpeed*dt; c.spin += dt*6;
+      if (!c.collected && Math.abs(player.x-c.x)<36 && Math.abs(player.y-c.y)<39) {
+        c.collected=true; coins++; score+=75; burst(c.x,c.y,'#ffd66b',9,100); showToast('+75 · COIN');
+      }
+    }
+    pickups = pickups.filter(c=>c.y<H+50&&!c.collected);
+    for (const p of particles) { p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=Math.pow(.08,dt); p.vy*=Math.pow(.08,dt); p.life-=dt; }
+    particles=particles.filter(p=>p.life>0);
+    if (toastTimer>0) { toastTimer-=dt; if(toastTimer<=0)$('toast').classList.remove('show'); }
+    if (flash>0) flash-=dt;
+    if (shake>0) shake-=dt;
+    updateHud();
+  }
+  function roundRect(x,y,w,h,r) { ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
+  function drawRoad() {
+    const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#101b36'); bg.addColorStop(.55,'#0a1429'); bg.addColorStop(1,'#070d1b');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    for(let i=0;i<34;i++) { const x=(i*193+41)%W, y=(i*97+Math.floor(roadOffset*.16))%H; ctx.globalAlpha=.2+(i%3)*.08; ctx.fillStyle=i%4===0?'#64efff':'#91a9d8'; ctx.fillRect(x,y,2,2); }
+    ctx.globalAlpha=1;
+    for(let i=0;i<19;i++) { const x=i*53-10, w=25+(i*17)%27, h=55+(i*37)%115; ctx.fillStyle=i%2?'#101d36':'#13213b'; ctx.fillRect(x,190-h,w,h); for(let yy=202-h;yy<185;yy+=14)for(let xx=x+5;xx<x+w-3;xx+=10){ctx.fillStyle=(Math.floor(xx+yy+i)%4===0)?'rgba(100,239,255,.28)':'rgba(126,151,201,.12)';ctx.fillRect(xx,yy,3,4);} }
+    ctx.fillStyle='rgba(21,49,76,.75)'; ctx.fillRect(ROAD.left-22,0,ROAD.right-ROAD.left+44,H);
+    ctx.fillStyle='#17243a'; ctx.fillRect(ROAD.left,0,ROAD.right-ROAD.left,H);
+    const rg=ctx.createLinearGradient(ROAD.left,0,ROAD.right,0);rg.addColorStop(0,'rgba(5,9,20,.25)');rg.addColorStop(.5,'rgba(25,39,60,.15)');rg.addColorStop(1,'rgba(5,9,20,.25)'); ctx.fillStyle=rg;ctx.fillRect(ROAD.left,0,ROAD.right-ROAD.left,H);
+    ctx.fillStyle='#3f8ba4';ctx.globalAlpha=.75;ctx.fillRect(ROAD.left-2,0,3,H);ctx.fillRect(ROAD.right-1,0,3,H);ctx.globalAlpha=1;
+    for(let y=-60+(roadOffset%60);y<H;y+=60){ctx.fillStyle='rgba(100,239,255,.5)';ctx.fillRect(ROAD.left-17,y,4,28);ctx.fillRect(ROAD.right+13,y,4,28);}
+    ctx.fillStyle='rgba(174,203,226,.48)';
+    for(let x of [410,550]) for(let y=-120+roadOffset;y<H;y+=120) ctx.fillRect(x-2,y,4,62);
+    for(let i=0;i<9;i++){let y=(i*91+roadOffset*1.8)%H;ctx.fillStyle='rgba(93,181,218,.07)';ctx.fillRect(ROAD.left+10,y,2,20+(i%3)*12);ctx.fillRect(ROAD.right-12,y+18,2,24);}
+  }
+  function drawCar(x,y,color,playerCar=false,truck=false) {
+    const w=truck?72:60,h=truck?108:94;
+    ctx.save();ctx.translate(x,y);
+    ctx.shadowColor=playerCar?'rgba(81,226,255,.45)':'rgba(0,0,0,.5)';ctx.shadowBlur=playerCar?23:10;
+    ctx.fillStyle='rgba(0,0,0,.45)';roundRect(-w/2+2,-h/2+8,w,h,13);ctx.fill();ctx.shadowBlur=0;
+    ctx.fillStyle='#03060c';roundRect(-w/2-3,-h/2+15,8,23,3);ctx.fill();roundRect(w/2-5,-h/2+15,8,23,3);ctx.fill();roundRect(-w/2-3,h/2-38,8,23,3);ctx.fill();roundRect(w/2-5,h/2-38,8,23,3);ctx.fill();
+    const body=ctx.createLinearGradient(-w/2,0,w/2,0);body.addColorStop(0,shade(color,-36));body.addColorStop(.35,color);body.addColorStop(.78,shade(color,12));body.addColorStop(1,shade(color,-28));
+    ctx.fillStyle=body;roundRect(-w/2,-h/2,w,h,13);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.12)';roundRect(-w/2+7,-h/2+7,w-14,truck?25:21,7);ctx.fill();
+    if(truck){ctx.fillStyle='#16263d';roundRect(-w/2+8,-h/2+35,w-16,26,5);ctx.fill();ctx.fillStyle='rgba(135,230,255,.25)';ctx.fillRect(-w/2+12,-h/2+38,w-24,3);}
+    else {ctx.fillStyle='#13273f';roundRect(-w/2+9,-h/2+24,w-18,23,6);ctx.fill();ctx.fillStyle='rgba(109,232,255,.24)';ctx.fillRect(-w/2+13,-h/2+28,w-26,3);ctx.fillStyle='#152940';roundRect(-w/2+10,5,w-20,20,5);ctx.fill();}
+    ctx.fillStyle=playerCar?'#f8fdff':'#ff506f';roundRect(-w/2+5,-h/2+5,12,5,2);ctx.fill();roundRect(w/2-17,-h/2+5,12,5,2);ctx.fill();
+    ctx.fillStyle=playerCar?'#ff637d':'#fdbb80';roundRect(-w/2+5,h/2-10,12,5,2);ctx.fill();roundRect(w/2-17,h/2-10,12,5,2);ctx.fill();
+    if(playerCar){ctx.strokeStyle='rgba(148,246,255,.85)';ctx.lineWidth=1.5;roundRect(-w/2+.75,-h/2+.75,w-1.5,h-1.5,12);ctx.stroke();}
+    ctx.restore();
+  }
+  function shade(hex,amt){const n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,(n>>16)+amt)),g=Math.max(0,Math.min(255,((n>>8)&255)+amt)),b=Math.max(0,Math.min(255,(n&255)+amt));return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1)}
+  function drawCoin(c) {
+    ctx.save();ctx.translate(c.x,c.y);ctx.scale(.68+Math.abs(Math.cos(c.spin))*.32,1);
+    ctx.shadowColor='#ffd66b';ctx.shadowBlur=17;ctx.fillStyle='#ffd66b';ctx.beginPath();ctx.arc(0,0,c.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+    ctx.strokeStyle='#fff2b3';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,c.r-4,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#7f5111';ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,1);ctx.restore();
+  }
+  function draw() {
+    ctx.save();
+    if(shake>0){ctx.translate((Math.random()-.5)*10,(Math.random()-.5)*8);}
+    drawRoad();
+    if(onlineMode && remotePlayer && remotePlayer.connected && remotePlayer.active){
+      const rx=remotePlayer.x!==undefined?remotePlayer.x:LANES[Math.max(0,Math.min(2,remotePlayer.lane))];
+      const rivalOffset=onlineRole==='host'?22:-22;
+      ctx.save();ctx.translate(rivalOffset,0);ctx.scale(.72,.72);drawCar(rx,CAR_Y,'#b38cff',false,false);ctx.restore();
+      ctx.save();ctx.fillStyle='#d8c6ff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('RIVAL',rx+rivalOffset,CAR_Y-43);ctx.restore();
+    } else if(remotePlayer && remotePlayer.active){
+      const rx=remotePlayer.x!==undefined?remotePlayer.x:LANES[Math.max(0,Math.min(2,remotePlayer.lane))];
+      drawCar(rx,CAR_Y-105,'#b38cff',false,false);
+      ctx.save();ctx.fillStyle='#d8c6ff';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.fillText('RIVAL',rx,CAR_Y-165);ctx.restore();
+    }
+    for(const c of pickups) drawCoin(c);
+    for(const t of traffic) drawCar(t.x,t.y,t.color,false,t.truck);
+    if(player && (state!=='over' || Math.floor(performance.now()/90)%2===0 || shake<=0)) {
+      if(onlineMode){const myOffset=onlineRole==='host'?-22:22;ctx.save();ctx.translate(myOffset,0);ctx.scale(.72,.72);drawCar(player.x,player.y,'#54dff5',true,false);ctx.restore();ctx.save();ctx.fillStyle='#a8f5ff';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('YOU',player.x+myOffset,CAR_Y-43);ctx.restore();}
+      else drawCar(player.x,player.y,'#54dff5',true,false);
+    }
+    for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+    const vg=ctx.createRadialGradient(W/2,H/2,170,W/2,H/2,590);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.34)');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+    if(flash>0){ctx.fillStyle=`rgba(255,72,105,${Math.min(.26,flash*1.4)})`;ctx.fillRect(0,0,W,H);}
+    ctx.restore();
+  }
+  function syncOnlineRender(now, dt) {
+    if (!onlineMode || !serverSnapshot) return;
+    const isRacing = serverSnapshot.status === 'racing';
+    const netDt = isRacing ? Math.min(.12, Math.max(0, (now - lastServerSnapshotAt) / 1000)) : 0;
+    const worldSpeed = 420 + Math.min(380, Number(serverSnapshot.elapsed || 0) * 4.5);
+    roadOffset = (Number(serverSnapshot.roadOffset || 0) + worldSpeed * netDt) % 120;
+    traffic = (serverSnapshot.traffic || []).map(t => ({...t, x: LANES[t.lane], y: t.y + (worldSpeed + t.speed * .23) * netDt}));
+    const mySlot = onlineRole === 'host' ? 1 : 2;
+    pickups = (serverSnapshot.pickups || []).filter(c => !Array.isArray(c.collectedBy) || !c.collectedBy.includes(mySlot)).map(c => ({...c, x: LANES[c.lane], y: c.y + worldSpeed * netDt, spin: c.spin + netDt * 6}));
+    if (player) player.x += (player.targetX - player.x) * Math.min(1, dt * 13);
+    if (remotePlayer && remotePlayer.targetX !== undefined) {
+      remotePlayer.x = (remotePlayer.x !== undefined ? remotePlayer.x : remotePlayer.targetX) + (remotePlayer.targetX - (remotePlayer.x !== undefined ? remotePlayer.x : remotePlayer.targetX)) * Math.min(1, dt * 13);
+    }
+  }
+  function frame(now) {
+    const dt=Math.min(.035,Math.max(0,(now-lastTime)/1000));lastTime=now;
+    if(state==='playing' && !onlineMode) update(dt);
+    else {
+      if(particles.length){for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.08,dt);p.vy*=Math.pow(.08,dt);p.life-=dt;}particles=particles.filter(p=>p.life>0);}
+      if(onlineMode){if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').classList.remove('show');}if(flash>0)flash-=dt;if(shake>0)shake-=dt;}
+    }
+    if (onlineMode) syncOnlineRender(now, dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  function startIfOver(){if(state==='start'||state==='over')startGame();}
+  function setOnlineStatus(msg){$('onlineStatus').textContent=msg;}
+  function sendSocket(message){if(socket && socket.readyState===WebSocket.OPEN){socket.send(JSON.stringify(message));return true;}return false;}
+  function serverUrl(){
+    const custom = new URLSearchParams(location.search).get('server');
+    if (custom) return custom;
+    if (location.protocol === 'file:') return 'ws://localhost:8080/ws';
+    const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${scheme}//${location.host}/ws`;
+  }
+  function saveSession(){
+    try{
+      if(roomCode && sessionToken){
+        localStorage.setItem('lanerush_session',JSON.stringify({code:roomCode,token:sessionToken,slot:onlineRole==='host'?1:2,savedAt:Date.now()}));
+      }
+    }catch(_){}
+  }
+  function loadSavedSession(){try{const v=JSON.parse(localStorage.getItem('lanerush_session')||'null');return v && typeof v.code==='string' && typeof v.token==='string' ? v : null;}catch(_){return null;}}
+  function restoreSavedSession(){
+    const saved=loadSavedSession();
+    if(saved){
+      $('roomInput').value=saved.code;
+      $('reconnectBtn').hidden=false;
+      if(saved.savedAt && (Date.now() - saved.savedAt < 44000)){
+        reconnectLastRace();
+      }
+    }
+  }
+  function openOnlineConnection(action, isAuto = false){
+    clearTimeout(reconnectTimer);
+    const generation=++connectionGeneration;
+    if(socket){try{socket.__intentional=true;socket.close();}catch(_){}}
+    onlineMode=true; $('onlineLive').hidden=false;
+    setConnectionState('connecting');
+    setOnlineStatus('Connecting to authoritative race server…');
+    let ws;
+    try{ws=new WebSocket(serverUrl());}catch(e){
+      setConnectionState('lost');
+      setOnlineStatus('Could not open WebSocket: '+e.message);
+      return;
+    }
+    socket=ws;
+    ws.addEventListener('open',()=>{
+      if(generation!==connectionGeneration)return;
+      setConnectionState('connected');
+      setOnlineStatus('Connected to race server.');
+      try{ws.send(JSON.stringify(action));}catch(_){}
+    });
+    ws.addEventListener('message',event=>{
+      if(generation!==connectionGeneration)return;
+      let msg;
+      try{msg=JSON.parse(event.data);}catch(_){return;}
+      handleServerMessage(msg);
+    });
+    ws.addEventListener('error',()=>{
+      if(generation===connectionGeneration){
+        setConnectionState('lost');
+        setOnlineStatus('Server connection failed. Make sure the Lane Rush server is running and reachable.');
+      }
+    });
+    ws.addEventListener('close',()=>{
+      if(generation!==connectionGeneration)return;
+      socket=null;
+      if(ws.__intentional)return;
+      if(onlineMode && autoReconnect && roomCode && sessionToken){
+        if(!reconnectDeadline || Date.now()>reconnectDeadline)reconnectDeadline=Date.now()+45000;
+        if(Date.now()<reconnectDeadline){
+          setConnectionState('reconnecting');
+          const remainingSec = Math.ceil((reconnectDeadline - Date.now()) / 1000);
+          setOnlineStatus(`Connection lost. Trying to reconnect… (${remainingSec}s remaining)`);
+          $('onlineLive').textContent=`NETWORK · Reconnecting (${remainingSec}s); race state is frozen`;
+          reconnectTimer=setTimeout(()=>{
+            if(onlineMode && sessionToken && Date.now()<reconnectDeadline) {
+              openOnlineConnection({type:'reconnect',code:roomCode,token:sessionToken},true);
+            }
+          },1200);
+        } else {
+          setConnectionState('lost');
+          setOnlineStatus('Reconnect window expired. Use the room code to rejoin or create a new race.');
+        }
+      } else {
+        setConnectionState('lost');
+        setOnlineStatus('Disconnected from the race server.');
+      }
+    });
+  }
+  function handleServerMessage(msg){
+    if(msg.type==='session'){
+      roomCode=String(msg.code||roomCode).toUpperCase();sessionToken=String(msg.token||sessionToken);onlineRole=Number(msg.slot)===1?'host':'guest';
+      $('roomInput').value=roomCode;$('reconnectBtn').hidden=false;saveSession();reconnectDeadline=0;
+      setConnectionState('connected');
+      setOnlineStatus(`Room ${roomCode} · ${onlineRole==='host'?'Host':'Guest'} session secured for reconnection.`);
+      return;
+    }
+    if(msg.type==='notice'){
+      setOnlineStatus(msg.message||'Online server update.');
+      if(msg.level==='error')$('onlineLive').textContent='NETWORK · '+(msg.message||'Connection error');
+      return;
+    }
+    if(msg.type==='crash'){
+      burst(player?player.x:LANES[1],CAR_Y,'#ff5e87',17,230);shake=.24;flash=.18;
+      showToast('CRASH · WAIT FOR THE OTHER DRIVER');return;
+    }
+    if(msg.type!=='state')return;
+    serverSnapshot=msg;lastServerSnapshotAt=performance.now();
+    const mine=msg.players && msg.players[(onlineRole==='host'?0:1)];
+    const rival=msg.players && msg.players[(onlineRole==='host'?1:0)];
+    if(mine && player){
+      player.lane=mine.lane;
+      player.targetX=LANES[mine.lane];
+      player.active=mine.active;
+      score=mine.score;
+      coins=mine.coins;
+      elapsed=msg.elapsed||0;
+      updateHud();
+    }
+    if(rival){
+      const rivalTargetX=LANES[Math.max(0,Math.min(2,rival.lane))];
+      if(!remotePlayer){
+        remotePlayer={...rival,x:rivalTargetX,targetX:rivalTargetX};
+      } else {
+        remotePlayer={...rival,x:remotePlayer.x!==undefined?remotePlayer.x:rivalTargetX,targetX:rivalTargetX};
+      }
+    } else {
+      remotePlayer=null;
+    }
+    $('onlineLive').hidden=false;
+    const rivalText=rival?(rival.connected?'Rival connected':'Rival reconnecting'):'Waiting for rival';
+    $('onlineLive').textContent=`ONLINE · ${roomCode} · ${rivalText} · ${msg.status.toUpperCase()}`;
+
+    if(msg.status==='waiting'){
+      state='start';$('startOverlay').hidden=false;$('pauseOverlay').hidden=true;$('gameOverOverlay').hidden=true;
+      const both=msg.players.every(p=>p && p.connected);
+      setConnectionState('connected');
+      setOnlineStatus(both?'Both drivers connected. Preparing race…':`Room ${roomCode}: share the code with your friend. The race starts when both connect.`);
+      return;
+    }
+    if(msg.status==='reconnecting'){
+      state='paused';$('startOverlay').hidden=true;$('pauseOverlay').hidden=false;$('gameOverOverlay').hidden=true;
+      $('pauseOverlay').querySelector('.eyebrow').textContent='NETWORK PAUSE';$('pauseOverlay').querySelector('h1').innerHTML='RACE<br><em>PAUSED</em>';
+      const remainingSec = msg.reconnectGraceRemainingMs ? Math.ceil(msg.reconnectGraceRemainingMs / 1000) : 45;
+      $('pauseOverlay').querySelector('.description').textContent=`A driver lost connection. The server has frozen the shared race while reconnect is available (${remainingSec}s remaining).`;
+      $('resumeBtn').textContent='Waiting for connection…';$('resumeBtn').disabled=true;$('pauseRestartBtn').hidden=true;$('pauseBtn').hidden=true;
+      setConnectionState('reconnecting');
+      setOnlineStatus(`Race frozen while a driver reconnects (${remainingSec}s remaining).`);return;
+    }
+    if(msg.status==='countdown'){
+      state='playing';$('startOverlay').hidden=true;$('pauseOverlay').hidden=true;$('gameOverOverlay').hidden=true;$('pauseBtn').hidden=true;
+      $('pauseOverlay').querySelector('.eyebrow').textContent='Take a breath';$('pauseOverlay').querySelector('h1').innerHTML='GAME<br><em>PAUSED</em>';$('pauseOverlay').querySelector('.description').textContent='The road will wait. Your run is right where you left it.';$('resumeBtn').textContent='Resume drive  ▶';$('resumeBtn').disabled=false;$('pauseRestartBtn').hidden=false;
+      setConnectionState('connected');
+      setOnlineStatus(`Race starts in ${(Math.ceil((msg.countdownMs||0)/1000))}…`);return;
+    }
+    if(msg.status==='racing'){
+      $('startOverlay').hidden=true;$('pauseOverlay').hidden=true;$('pauseBtn').hidden=true;
+      $('pauseOverlay').querySelector('.eyebrow').textContent='Take a breath';$('pauseOverlay').querySelector('h1').innerHTML='GAME<br><em>PAUSED</em>';$('pauseOverlay').querySelector('.description').textContent='The road will wait. Your run is right where you left it.';$('resumeBtn').textContent='Resume drive  ▶';$('resumeBtn').disabled=false;$('pauseRestartBtn').hidden=false;
+      setConnectionState('connected');
+      if(mine && !mine.active){state='over';$('gameOverOverlay').hidden=false;$('gameOverOverlay').querySelector('.description').textContent='You crashed. The shared race continues while your rival is still driving.';$('restartBtn').textContent='Wait for race finish…';$('restartBtn').disabled=true;}
+      else {state='playing';$('gameOverOverlay').hidden=true;}
+      setOnlineStatus(mine && !mine.active?'Crash registered by the server. Waiting for the other driver…':'Shared traffic, coins and collision state are server-authoritative.');return;
+    }
+    if(msg.status==='finished'){
+      state='over';$('startOverlay').hidden=true;$('pauseOverlay').hidden=true;$('gameOverOverlay').hidden=false;$('pauseBtn').hidden=true;
+      $('finalScore').textContent=Math.floor(mine?mine.score:score).toLocaleString();$('finalCoins').textContent=mine?mine.coins:coins;
+      const thisSlot=onlineRole==='host'?1:2;
+      const result=msg.winner=== 'tie'?'It’s a tie!':msg.winner===thisSlot?'You won the race!':'Race finished. Your rival wins this round.';
+      $('gameOverOverlay').querySelector('.description').textContent=result+' Both players can request a rematch.';
+      $('restartBtn').textContent=mine && mine.rematchRequested?'Waiting for rival…':'Request rematch ↻';$('restartBtn').disabled=Boolean(mine && mine.rematchRequested);
+      best=Math.max(best,Math.floor(mine?mine.score:score));$('finalBest').textContent=best.toLocaleString();$('best').textContent=formatScore(best);
+      setConnectionState('finished');
+      setOnlineStatus(result+' Click Request rematch after both drivers are ready.');return;
+    }
+  }
+  function requestRematch(){if(!onlineMode){startGame();return;}if(socket&&socket.readyState===WebSocket.OPEN){sendSocket({type:'rematch'});$('restartBtn').disabled=true;$('restartBtn').textContent='Rematch requested…';}else setOnlineStatus('Reconnect before requesting a rematch.');}
+  function createOnlineRoom(){onlineMode=true;autoReconnect=true;sessionToken='';roomCode='';onlineRole='';serverSnapshot=null;remotePlayer=null;try{localStorage.removeItem('lanerush_session');}catch(_){}openOnlineConnection({type:'create'});}
+  function joinOnlineRoom(){const code=$('roomInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){setOnlineStatus('Enter the 6-character room code your friend shared.');return;}const saved=loadSavedSession();onlineMode=true;autoReconnect=true;serverSnapshot=null;remotePlayer=null;roomCode=code;sessionToken='';onlineRole='';if(saved && saved.code===code){sessionToken=saved.token;onlineRole=Number(saved.slot)===1?'host':'guest';openOnlineConnection({type:'reconnect',code,token:sessionToken});}else openOnlineConnection({type:'join',code});}
+  function reconnectLastRace(){const saved=loadSavedSession();if(!saved){setOnlineStatus('No saved race session was found. Create or join a room.');return;}onlineMode=true;autoReconnect=true;roomCode=saved.code;sessionToken=saved.token;onlineRole=Number(saved.slot)===1?'host':'guest';$('roomInput').value=roomCode;openOnlineConnection({type:'reconnect',code:roomCode,token:sessionToken});}
+  $('hostBtn').addEventListener('click',createOnlineRoom);
+  $('joinBtn').addEventListener('click',joinOnlineRoom);
+  $('reconnectBtn').addEventListener('click',reconnectLastRace);
+
+  $('startBtn').addEventListener('click',()=>{if(onlineMode){setOnlineStatus('Waiting for the other driver to join.');return;}startGame();}); $('restartBtn').addEventListener('click',requestRematch); $('resumeBtn').addEventListener('click',()=>{if(onlineMode){setOnlineStatus('Online race timing is controlled by the server.');return;}resumeGame();}); $('pauseBtn').addEventListener('click',pauseGame); $('pauseRestartBtn').addEventListener('click',()=>{if(onlineMode){setOnlineStatus('Restarting an online race requires both drivers to finish and request a rematch.');return;}startGame();});
+  $('leftBtn').addEventListener('pointerdown',e=>{e.preventDefault();if(state==='start')startGame();steer(-1)});
+  $('rightBtn').addEventListener('pointerdown',e=>{e.preventDefault();if(state==='start')startGame();steer(1)});
+  window.addEventListener('keydown',e=>{
+    const key=e.key.toLowerCase();
+    if(['arrowleft','arrowright',' '].includes(key))e.preventDefault();
+    if(key==='arrowleft'||key==='a')steer(-1);
+    if(key==='arrowright'||key==='d')steer(1);
+    if(key==='p'||key==='escape'){if(state==='playing'||state==='paused')pauseGame();}
+    if(key==='enter'&&(state==='start'||state==='over'))startIfOver();
+    if(key===' '&&state==='start')startGame();
+  },{passive:false});
+  // Swipe anywhere on the game surface for mobile devices.
+  let touchStartX=null;
+  canvas.addEventListener('touchstart',e=>{if(e.touches.length)touchStartX=e.touches[0].clientX;},{passive:true});
+  canvas.addEventListener('touchend',e=>{if(touchStartX===null)return;const dx=e.changedTouches[0].clientX-touchStartX;if(Math.abs(dx)>24)steer(dx>0?1:-1);touchStartX=null;},{passive:true});
+  // Clicking the playfield on the title screen starts the first run.
+  canvas.addEventListener('click',()=>{if(state==='start')startGame();});
+  resetGame();
+  restoreSavedSession();
+  requestAnimationFrame(now=>{lastTime=now;requestAnimationFrame(frame)});
+})();
+</script>
+</body>
+</html>
