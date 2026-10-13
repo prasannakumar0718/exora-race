@@ -1,4 +1,4 @@
-# Production Dockerfile for Lane Rush Authoritative Multiplayer Server
+# Production Dockerfile for Exora Race Authoritative Multiplayer Server
 FROM node:20-alpine AS runner
 
 WORKDIR /app

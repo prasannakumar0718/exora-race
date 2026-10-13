@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#070b18">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏎️</text></svg>">
-<title>Lane Rush — Arcade Driver</title>
+<title>Exora Race — Arcade Driver</title>
 <style>
   :root{color-scheme:dark;--ink:#f4f7ff;--muted:#99a8c7;--cyan:#64efff;--pink:#ff5eaa;--panel:rgba(12,19,42,.78)}
   *{box-sizing:border-box}
@@ -69,10 +69,10 @@
 </head>
 <body>
 <div class="game-shell" id="gameShell">
-  <canvas id="game" width="960" height="640" aria-label="Lane Rush arcade car game"></canvas>
+  <canvas id="game" width="960" height="640" aria-label="Exora Race arcade car game"></canvas>
   <div class="topbar">
     <div>
-      <div class="brand">LANE<span>RUSH</span></div>
+      <div class="brand">EXORA<span>RACE</span></div>
       <div class="tagline">One more run.</div>
       <div class="conn-badge conn-connected" id="connBadge" hidden>
         <span class="conn-dot"></span><span id="connBadgeText">Connected</span>
@@ -95,13 +95,13 @@
   <section class="overlay" id="startOverlay">
     <div class="dialog">
       <div class="eyebrow">Arcade driving · Endless mode</div>
-      <h1>LANE<br><em>RUSH</em></h1>
+      <h1>EXORA<br><em>RACE</em></h1>
       <p class="description">Dodge traffic at higher speed. Create an online room or join a friend with a room code.</p>
       <button class="primary" id="startBtn">Start your run&nbsp; ↗</button>
       <button class="secondary" id="hostBtn">Create online race</button>
       <div class="online-row"><input id="roomInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code"><button class="secondary" id="joinBtn" style="margin-top:0;width:auto">Join</button></div>
       <button class="secondary" id="reconnectBtn" hidden>Reconnect to last race</button>
-      <div class="online-status" id="onlineStatus" role="status">Online race runs through the Lane Rush server. Start the server, then create or join a room.</div>
+      <div class="online-status" id="onlineStatus" role="status">Online race runs through the Exora Race server. Start the server, then create or join a room.</div>
       <div class="controls-note">Steer with A / D or ← / →</div>
     </div>
   </section>

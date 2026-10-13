@@ -56,7 +56,7 @@ async function runBrowserTests() {
     });
 
     await soloPage.goto(BASE_URL);
-    assert.equal(await soloPage.title(), 'Lane Rush — Arcade Driver', 'page title matches');
+    assert.equal(await soloPage.title(), 'Exora Race — Arcade Driver', 'page title matches');
     assert.equal(await soloPage.isVisible('#game'), true, 'canvas is visible');
     assert.equal(await soloPage.isVisible('#startOverlay'), true, 'start dialog is visible');
 

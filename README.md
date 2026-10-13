@@ -1,6 +1,6 @@
-# Lane Rush — Server-Authoritative Online Multiplayer Driver
+# Exora Race — Server-Authoritative Online Multiplayer Driver
 
-Lane Rush is a fast, responsive browser arcade driving game featuring solo endless mode and synchronized, server-authoritative online multiplayer races.
+Exora Race is a fast, responsive browser arcade driving game featuring solo endless mode and synchronized, server-authoritative online multiplayer races.
 
 ---
 

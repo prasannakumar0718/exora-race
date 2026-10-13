@@ -1,4 +1,4 @@
-# Lane Rush — Test Report & Verification Evidence
+# Exora Race — Test Report & Verification Evidence
 
 ## 1. Automated Test Execution Summary
 

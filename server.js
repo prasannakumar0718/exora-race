@@ -38,7 +38,7 @@ const httpServer = http.createServer((req, res) => {
     });
     res.end(JSON.stringify({
       ok: true,
-      service: 'lane-rush',
+      service: 'exora-race',
       rooms: rooms.size,
       connections: activeConnections.size,
       tickHz: Math.round(1000 / TICK_MS),
@@ -841,7 +841,7 @@ const tickInterval = setInterval(fixedTick, TICK_MS);
 tickInterval.unref();
 
 httpServer.listen(PORT, HOST, () => {
-  console.log(`Lane Rush authoritative server listening on http://${HOST}:${PORT}`);
+  console.log(`Exora Race authoritative server listening on http://${HOST}:${PORT}`);
   console.log(`WebSocket endpoint: ws://${HOST}:${PORT}/ws`);
 });
 

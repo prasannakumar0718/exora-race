@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: lane-rush
+    name: exora-race
     env: node
     plan: starter # Starter plan recommended to prevent idle sleeping on free tier during multiplayer
     buildCommand: ""

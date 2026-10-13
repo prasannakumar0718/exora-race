@@ -1,8 +1,8 @@
-# Lane Rush — Game Design & Authoritative Multiplayer Architecture
+# Exora Race — Game Design & Authoritative Multiplayer Architecture
 
 ## 1. Core Game Loop & Gameplay Mechanics
 
-Lane Rush is an arcade lane racer where drivers navigate high-speed traffic across three distinct road lanes (`LANES = [340, 480, 620]`).
+Exora Race is an arcade lane racer where drivers navigate high-speed traffic across three distinct road lanes (`LANES = [340, 480, 620]`).
 
 ### Dynamics & Difficulty Progression
 - **Base Road Speed:** 420 px/s

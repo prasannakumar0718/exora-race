@@ -1,6 +1,6 @@
-# Lane Rush — Production Deployment Guide
+# Exora Race — Production Deployment Guide
 
-This guide covers deploying the **Lane Rush authoritative multiplayer server** to public cloud hosting so two or more physical devices (phones, laptops, tablets) can race against each other over the public internet.
+This guide covers deploying the **Exora Race authoritative multiplayer server** to public cloud hosting so two or more physical devices (phones, laptops, tablets) can race against each other over the public internet.
 
 ---
 

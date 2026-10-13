@@ -78,7 +78,7 @@ async function main() {
     // 1. Health endpoint test
     const health = await waitServer();
     assert.equal(health.ok, true, 'health endpoint ok');
-    assert.equal(health.service, 'lane-rush', 'health service name');
+    assert.equal(health.service, 'exora-race', 'health service name');
     assert.equal(health.reconnectGraceMs, 45000, 'reconnect grace ms configured');
     console.log('PASS 1: Health endpoint responds with valid service metadata');
 
